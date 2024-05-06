@@ -10,7 +10,7 @@ PKG_NAME:=luci-app-socat
 PKG_VERSION:=20240405
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=Lienol <j.wroiate@gmail.com>
+PKG_MAINTAINER:=WROIATE <j.wroiate@gmail.com>
 
 LUCI_TITLE:=LuCI support for Socat
 LUCI_DEPENDS:=+socat
