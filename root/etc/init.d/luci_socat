@@ -2,17 +2,17 @@
 # Copyright (C) 2020 Lienol <lawlienol@gmail.com>
 # Copyright (C) 2024 WROIATE <j.wroiate@gmail.com>
 
-START=99
+USE_PROCD=1
 
 CONFIG=socat
 CONFIG_PATH=/var/etc/$CONFIG
 RULES=
 
-del_rule() {
-	handles=$(nft -a list chain inet fw4 input | grep -E \"SOCAT\" | awk -F '# handle ' '{print$2}')
-	for handle in $handles; do
-		nft delete rule inet fw4 input handle ${handle} 2>/dev/null
-	done
+START=99
+
+remove_fw_rule() {
+	rm -rf /var/etc/$CONFIG.nft
+	fw4 reload >"/dev/null" 2>&1
 	nft delete chain inet fw4 SOCAT 2>/dev/null
 }
 
@@ -34,88 +34,95 @@ run_service() {
 	config_get firewall_accept $1 firewall_accept
 	ln -s /usr/bin/socat ${CONFIG_PATH}/$1
 
-	if [ "$reuseaddr" == "1" ]; then
+	if [ "$reuseaddr" = "1" ]; then
 		reuseaddr=",reuseaddr"
 	else
 		reuseaddr=""
 	fi
 
-	if [ "$family" == "6" ]; then
+	if [ "$family" = "6" ]; then
 		ipv6only_params=",ipv6-v6only"
 	else
 		ipv6only_params=""
 	fi
 
 	# 端口转发
-	if [ "$protocol" == "port_forwards" ]; then
+	if [ "$protocol" = "port_forwards" ]; then
 		listen=${proto}${family}
-		[ "$family" == "" ] && listen=${proto}6
+		[ "$family" = "" ] && listen=${proto}6
 		[ "$proxy" != "" ] && {
 			proxy_arg=""
-			[ "$proxy" == "socks4/4a" ] && {
+			[ "$proxy" = "socks4/4a" ] && {
 				dest_proto="socks4a"
 				proxy_arg="socksport"
 			}
-			[ "$proxy" == "http" ] && {
+			[ "$proxy" = "http" ] && {
 				dest_proto="proxy"
 				proxy_arg="proxyport"
 			}
 			[ -n "$proxy_server" ] && dest_proto="${dest_proto}:${proxy_server}"
 			[ -n "$proxy_port" ] && proxy_arg=",${proxy_arg}=${proxy_port}"
 		}
-		${CONFIG_PATH}/$1 ${listen}-listen:${listen_port}${ipv6only_params}${reuseaddr},fork ${dest_proto}:${dest_ip}:${dest_port}${proxy_arg} >/dev/null 2>&1 &
+		procd_open_instance "$remarks-$1"
+		procd_set_param command ${CONFIG_PATH}/$1 ${listen}-listen:${listen_port}${ipv6only_params}${reuseaddr},fork ${dest_proto}:${dest_ip}:${dest_port}${proxy_arg}
+		procd_set_param stdout 1
+		procd_set_param stderr 1
+		procd_close_instance
 	fi
 
-	[ "$firewall_accept" == "1" ] && {
-		if [ -z "$family" ] || [ "$family" == "6" ]; then
-			RULES="$RULES
-add rule inet fw4 SOCAT meta nfproto ipv6 $proto dport $listen_port counter accept comment \"$remarks\""
-		fi
-		if [ -z "$family" ] || [ "$family" == "4" ]; then
-			RULES="$RULES
-add rule inet fw4 SOCAT meta nfproto ipv4 $proto dport $listen_port counter accept comment \"$remarks\""
-		fi
-	}
+	[ "$firewall_accept" = "1" ] && append_fw_rule "$family" "$proto" "$listen_port" "$remarks"
 }
 
-rules_load() {
+append_fw_rule() {
+	local family="$1"
+	local proto="$2"
+	local listen_port="$3"
+	local remarks="$4"
+	if [ -z "$family" ] || [ "$family" = "6" ]; then
+		RULES="$RULES
+		meta nfproto ipv6 $proto dport $listen_port counter accept comment \"$remarks\""
+	fi
+	if [ -z "$family" ] || [ "$family" = "4" ]; then
+		RULES="$RULES
+		meta nfproto ipv4 $proto dport $listen_port counter accept comment \"$remarks\""
+	fi
+}
+
+set_fw_rules() {
 	[ -z "$RULES" ] && return 0
-	cat <<-EOF >>/var/etc/$CONFIG.include
-		#!/usr/sbin/nft -f
+	cat <<-EOF >>/var/etc/$CONFIG.nft
+		chain SOCAT {
+		        $RULES
+		        return
+		}
 
-		add chain inet fw4 SOCAT
-		flush chain inet fw4 SOCAT
-		insert rule inet fw4 input position 0 jump SOCAT comment "SOCAT"
-		$RULES
-
-		add rule inet fw4 SOCAT return
+		chain input {
+		        jump SOCAT comment "SOCAT"
+		}
 	EOF
-	nft -f /var/etc/$CONFIG.include
+	fw4 reload >"/dev/null" 2>&1
 }
 
 stop_service() {
-	busybox ps -w | grep "$CONFIG_PATH/" | grep -v "grep" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1 &
-	rm -rf $CONFIG_PATH /var/etc/$CONFIG.include
-	del_rule
+	remove_fw_rule
+	rm -rf ${CONFIG_PATH}
 }
 
-start() {
+start_service() {
 	enable=$(uci -q get $CONFIG.@global[0].enable)
-	if [ "$enable" = "0" ]; then
-		stop_service
-	else
+	if [ "$enable" = "1" ]; then
 		mkdir -p $CONFIG_PATH
 		config_load $CONFIG
 		config_foreach run_service "config"
-		rules_load
+		set_fw_rules
 	fi
 }
 
-stop() {
-	stop_service
+service_triggers() {
+	procd_add_reload_trigger "socat"
 }
 
-restart() {
+reload_service() {
 	stop
 	start
 }
