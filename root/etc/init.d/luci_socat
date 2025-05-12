@@ -1,17 +1,19 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2020 Lienol <lawlienol@gmail.com>
-# Copyright (C) 2024 WROIATE <j.wroiate@gmail.com>
+# Copyright (C) 2025 WROIATE <j.wroiate@gmail.com>
 
 USE_PROCD=1
+START=99
 
 CONFIG=socat
 CONFIG_PATH=/var/etc/$CONFIG
+NFT_TABLE_POST=/usr/share/nftables.d/table-post/socat.nft
+NFT_CHAIN_PRE=/usr/share/nftables.d/chain-pre/input_wan/socat.nft
 RULES=
 
-START=99
-
 remove_fw_rule() {
-	rm -rf /var/etc/$CONFIG.nft
+	echo "" >$NFT_TABLE_POST
+	echo "" >$NFT_CHAIN_PRE
 	fw4 reload >"/dev/null" 2>&1
 	nft delete chain inet fw4 SOCAT 2>/dev/null
 }
@@ -90,15 +92,14 @@ append_fw_rule() {
 
 set_fw_rules() {
 	[ -z "$RULES" ] && return 0
-	cat <<-EOF >>/var/etc/$CONFIG.nft
+	cat <<-EOF >>$NFT_TABLE_POST
 		chain SOCAT {
 		        $RULES
 		        return
 		}
-
-		chain input {
-		        jump SOCAT comment "SOCAT"
-		}
+	EOF
+	cat <<-EOF >>$NFT_CHAIN_PRE
+		jump SOCAT comment "socat rule for luci app"
 	EOF
 	fw4 reload >"/dev/null" 2>&1
 }

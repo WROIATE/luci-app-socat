@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-socat
-PKG_VERSION:=20240916
-PKG_RELEASE:=2
+PKG_VERSION:=20250512
+PKG_RELEASE:=3
 
 PKG_MAINTAINER:=WROIATE <j.wroiate@gmail.com>
 
