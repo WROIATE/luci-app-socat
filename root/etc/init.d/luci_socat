@@ -92,13 +92,13 @@ append_fw_rule() {
 
 set_fw_rules() {
 	[ -z "$RULES" ] && return 0
-	cat <<-EOF >>$NFT_TABLE_POST
+	cat <<-EOF >$NFT_TABLE_POST
 		chain SOCAT {
 		        $RULES
 		        return
 		}
 	EOF
-	cat <<-EOF >>$NFT_CHAIN_PRE
+	cat <<-EOF >$NFT_CHAIN_PRE
 		jump SOCAT comment "socat rule for luci app"
 	EOF
 	fw4 reload >"/dev/null" 2>&1
