@@ -1,19 +1,17 @@
 <script type="text/javascript">
 	//<![CDATA[
-	var _status = document.getElementsByClassName('_status');
-	for(var i = 0; i < _status.length; i++) {
-		var id = _status[i].parentElement.parentElement.parentElement.id;
-		id = id.substr(id.lastIndexOf("-") + 1);
-		XHR.poll(1,'<%=url([[admin]], [[network]], [[socat]], [[status]])%>', {
-				index: i,
-				id: id
-			},
-			function(x, result) {
-				_status[result.index].setAttribute("style","font-weight:bold;");
-				_status[result.index].setAttribute("color",result.status ? "green":"red");
-				_status[result.index].innerHTML = (result.status ? '✓' : 'X');
+	let _status = document.getElementsByClassName('_status');
+	XHR.poll(3, '<%=url([[admin]], [[network]], [[socat]], [[status]])%>', {},
+		function (x, result) {
+			for (let statusView of _status) {
+				var id = statusView.parentElement.parentElement.parentElement.id;
+				id = id.substr(id.lastIndexOf("-") + 1);
+				statusView.setAttribute("style", "font-weight:bold;");
+				let running = result?.["luci_socat"]?.["instances"]?.[id]?.["running"] ?? false
+				statusView.setAttribute("color", running ? "green" : "red");
+				statusView.innerHTML = (running ? '✓' : 'X');
 			}
-		);
-	}
+		}
+	);
 	//]]>
 </script>

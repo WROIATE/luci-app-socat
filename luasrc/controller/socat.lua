@@ -6,16 +6,14 @@ function index()
 		return
 	end
 
-	entry({"admin", "network", "socat"}, alias("admin", "network", "socat", "index"), _("Socat"), 100).dependent = true
-	entry({"admin", "network", "socat", "index"}, cbi("socat/index")).leaf = true
-	entry({"admin", "network", "socat", "config"}, cbi("socat/config")).leaf = true
-	entry({"admin", "network", "socat", "status"}, call("act_status")).leaf = true
+	entry({ "admin", "network", "socat" }, alias("admin", "network", "socat", "index"), _("Socat"), 100).dependent = true
+	entry({ "admin", "network", "socat", "index" }, cbi("socat/index")).leaf = true
+	entry({ "admin", "network", "socat", "config" }, cbi("socat/config")).leaf = true
+	entry({ "admin", "network", "socat", "status" }, call("act_status")).leaf = true
 end
 
 function act_status()
-	local e = {}
-	e.index = luci.http.formvalue("index")
-	e.status = luci.sys.call(string.format("busybox ps -w | grep -v 'grep' | grep '/var/etc/socat/%s' >/dev/null", luci.http.formvalue("id"))) == 0
+	local e = luci.util.ubus("service", "list", { name = "luci_socat" })
 	luci.http.prepare_content("application/json")
 	luci.http.write_json(e)
 end
