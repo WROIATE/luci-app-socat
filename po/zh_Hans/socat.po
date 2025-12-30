@@ -57,3 +57,6 @@ msgstr "代理端口"
 
 msgid "Open firewall port"
 msgstr "打开防火墙端口"
+
+msgid "Print message to system log"
+msgstr "打印信息至系统日志"

@@ -98,4 +98,8 @@ o = s:option(Flag, "firewall_accept", translate("Open firewall port"))
 o.default = "1"
 o.rmempty = false
 
+o = s:option(Flag, "system_log", translate("Print message to system log"))
+o.default = "0"
+o.rmempty = false
+
 return m

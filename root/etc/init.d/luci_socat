@@ -34,6 +34,7 @@ run_service() {
 	config_get proxy_server $1 proxy_server
 	config_get proxy_port $1 proxy_port
 	config_get firewall_accept $1 firewall_accept
+	config_get system_log $1 system_log
 
 	if [ "$reuseaddr" = "1" ]; then
 		reuseaddr=",reuseaddr"
@@ -66,8 +67,10 @@ run_service() {
 		}
 		procd_open_instance "$1"
 		procd_set_param command /usr/bin/socat ${listen}-listen:${listen_port}${ipv6only_params}${reuseaddr},fork ${dest_proto}:${dest_ip}:${dest_port}${proxy_arg}
-		procd_set_param stdout 1
-		procd_set_param stderr 1
+		if [ "$system_log" = "1" ]; then
+			procd_set_param stdout 1
+			procd_set_param stderr 1
+		fi
 		procd_set_param respawn 20 4 2
 		procd_close_instance
 	fi
