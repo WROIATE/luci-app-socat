@@ -1,5 +1,41 @@
 #!/bin/sh
 
+# Create the private configuration only once. Never overwrite an existing setup.
+if [ ! -e /etc/config/luci_socat ]; then
+	workdir=$(mktemp -d /etc/config/.luci-socat.XXXXXX) || exit 1
+	trap 'rm -rf "$workdir"' EXIT
+
+	if [ -f /etc/config/socat ]; then
+		# Export through UCI so quoted values and lists remain valid, without eval.
+		uci -q export socat >"$workdir/source" || exit 1
+		awk '
+			BEGIN { quote = sprintf("%c", 39) }
+			!quoted && /^config / { keep = ($2 == "global" || $2 == "config") }
+			{
+				if (keep) print
+				# UCI exports single-quoted values, possibly spanning lines.
+				for (i = 1; i <= length($0); i++) {
+					c = substr($0, i, 1)
+					if (!quoted && c == "\\") i++
+					else if (c == quote) quoted = !quoted
+				}
+			}
+		' "$workdir/source" >"$workdir/config" || exit 1
+	fi
+
+	if [ -s "$workdir/config" ]; then
+		# Keep the original file (including official socat sections) untouched.
+		if [ ! -e /etc/config/socat.luci-app-backup ]; then
+			cp -p /etc/config/socat /etc/config/socat.luci-app-backup || exit 1
+		fi
+	else
+		printf "config global 'global'\n\toption enable '0'\n" >"$workdir/config" || exit 1
+	fi
+
+	chmod 600 "$workdir/config" || exit 1
+	mv "$workdir/config" /etc/config/luci_socat || exit 1
+fi
+
 # Remove files left behind by manually installed Lua versions.
 rm -f /usr/lib/lua/luci/controller/socat.lua \
 	/usr/lib/lua/luci/model/cbi/socat/index.lua \

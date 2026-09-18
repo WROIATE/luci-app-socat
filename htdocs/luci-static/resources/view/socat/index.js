@@ -31,7 +31,7 @@ function statusText(services, sectionId) {
 return view.extend({
 	load: function() {
 		return Promise.all([
-			uci.load('socat'),
+			uci.load('luci_socat'),
 			callServiceList('luci_socat').catch(function() { return null; }),
 			L.resolveDefault(callHostHints(), {})
 		]);
@@ -42,7 +42,7 @@ return view.extend({
 		var services = data[1];
 		var hints = data[2];
 
-		m = new form.Map('socat', _('Socat'),
+		m = new form.Map('luci_socat', _('Socat'),
 			_("Socat is a versatile networking tool named after 'Socket CAT', which can be regarded as an N-fold enhanced version of NetCat"));
 
 		s = m.section(form.NamedSection, 'global', 'global');
@@ -55,7 +55,7 @@ return view.extend({
 		s.addremove = true;
 		s.modaltitle = _('Socat Config');
 		s.filter = function(sectionId) {
-			return uci.get('socat', sectionId, 'protocol') == 'port_forwards';
+			return uci.get('luci_socat', sectionId, 'protocol') == 'port_forwards';
 		};
 
 		o = s.option(form.Flag, 'enable', _('Enable'));

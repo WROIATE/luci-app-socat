@@ -5,7 +5,7 @@
 USE_PROCD=1
 START=99
 
-CONFIG=socat
+CONFIG=luci_socat
 CONFIG_PATH=/var/etc/$CONFIG
 NFT_TABLE_POST=/usr/share/nftables.d/table-post/socat.nft
 NFT_CHAIN_PRE=/usr/share/nftables.d/chain-pre/input_wan/socat.nft
@@ -123,7 +123,7 @@ start_service() {
 }
 
 service_triggers() {
-	procd_add_reload_trigger "socat"
+	procd_add_reload_trigger "$CONFIG"
 }
 
 reload_service() {

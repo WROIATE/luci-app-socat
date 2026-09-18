@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-socat
 PKG_VERSION:=20250512
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_MAINTAINER:=WROIATE <j.wroiate@gmail.com>
 
@@ -17,7 +17,7 @@ LUCI_DEPENDS:=+luci-base +socat
 LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/conffiles
-/etc/config/socat
+/etc/config/luci_socat
 endef
 
 include $(TOPDIR)/feeds/luci/luci.mk
