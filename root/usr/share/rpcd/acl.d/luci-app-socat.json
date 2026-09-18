@@ -1,11 +1,23 @@
 {
 	"luci-app-socat": {
-		"description": "Grant UCI access for luci-app-socat",
+		"description": "Grant access to Socat configuration and service status",
 		"read": {
-			"uci": [ "socat" ]
+			"uci": [
+				"socat"
+			],
+			"ubus": {
+				"service": [
+					"list"
+				],
+				"luci-rpc": [
+					"getHostHints"
+				]
+			}
 		},
 		"write": {
-			"uci": [ "socat" ]
+			"uci": [
+				"socat"
+			]
 		}
 	}
 }

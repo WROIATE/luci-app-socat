@@ -8,12 +8,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-socat
 PKG_VERSION:=20250512
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_MAINTAINER:=WROIATE <j.wroiate@gmail.com>
 
 LUCI_TITLE:=LuCI support for Socat
-LUCI_DEPENDS:=+socat
+LUCI_DEPENDS:=+luci-base +socat
 LUCI_PKGARCH:=all
 
 define Package/$(PKG_NAME)/conffiles

@@ -1,0 +1,14 @@
+{
+	"admin/network/socat": {
+		"title": "Socat",
+		"order": 100,
+		"action": {
+			"type": "view",
+			"path": "socat/index"
+		},
+		"depends": {
+			"acl": [ "luci-app-socat" ],
+			"uci": { "socat": true }
+		}
+	}
+}

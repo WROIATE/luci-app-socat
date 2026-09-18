@@ -1,4 +1,10 @@
 #!/bin/sh
 
+# Remove files left behind by manually installed Lua versions.
+rm -f /usr/lib/lua/luci/controller/socat.lua \
+	/usr/lib/lua/luci/model/cbi/socat/index.lua \
+	/usr/lib/lua/luci/model/cbi/socat/config.lua \
+	/usr/lib/lua/luci/view/socat/list_status.htm \
+	/usr/lib/lua/luci/view/socat/status.htm
 rm -rf /tmp/luci-*cache
 exit 0

@@ -57,3 +57,24 @@ msgstr "代理端口"
 
 msgid "Open firewall port"
 msgstr "打开防火墙端口"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Not running"
+msgstr "未运行"
+
+msgid "Unable to query service status"
+msgstr "无法查询服务状态"
+
+msgid "Restrict to address family"
+msgstr "限制地址族"
+
+msgid "IPv4 and IPv6"
+msgstr "IPv4 和 IPv6"
+
+msgid "IPv4 only"
+msgstr "仅 IPv4"
+
+msgid "IPv6 only"
+msgstr "仅 IPv6"
