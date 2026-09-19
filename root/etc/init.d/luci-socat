@@ -5,7 +5,7 @@
 USE_PROCD=1
 START=99
 
-CONFIG=luci_socat
+CONFIG=luci-socat
 CONFIG_PATH=/var/etc/$CONFIG
 NFT_TABLE_POST=/usr/share/nftables.d/table-post/socat.nft
 NFT_CHAIN_PRE=/usr/share/nftables.d/chain-pre/input_wan/socat.nft

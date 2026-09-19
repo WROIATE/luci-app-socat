@@ -1,40 +1,54 @@
 #!/bin/sh
 
 # Create the private configuration only once. Never overwrite an existing setup.
-if [ ! -e /etc/config/luci_socat ]; then
+if [ ! -e /etc/config/luci-socat ]; then
 	workdir=$(mktemp -d /etc/config/.luci-socat.XXXXXX) || exit 1
 	trap 'rm -rf "$workdir"' EXIT
 
-	if [ -f /etc/config/socat ]; then
-		# Export through UCI so quoted values and lists remain valid, without eval.
-		uci -q export socat >"$workdir/source" || exit 1
-		awk '
-			BEGIN { quote = sprintf("%c", 39) }
-			!quoted && /^config / { keep = ($2 == "global" || $2 == "config") }
-			{
-				if (keep) print
-				# UCI exports single-quoted values, possibly spanning lines.
-				for (i = 1; i <= length($0); i++) {
-					c = substr($0, i, 1)
-					if (!quoted && c == "\\") i++
-					else if (c == quote) quoted = !quoted
-				}
-			}
-		' "$workdir/source" >"$workdir/config" || exit 1
-	fi
-
-	if [ -s "$workdir/config" ]; then
-		# Keep the original file (including official socat sections) untouched.
-		if [ ! -e /etc/config/socat.luci-app-backup ]; then
-			cp -p /etc/config/socat /etc/config/socat.luci-app-backup || exit 1
-		fi
+	# Prefer the configuration used by the previous JavaScript version.
+	if [ -f /etc/config/luci_socat ]; then
+		cp -p /etc/config/luci_socat "$workdir/config" || exit 1
 	else
-		printf "config global 'global'\n\toption enable '0'\n" >"$workdir/config" || exit 1
+		if [ -f /etc/config/socat ]; then
+			# Export through UCI so quoted values and lists remain valid, without eval.
+			uci -q export socat >"$workdir/source" || exit 1
+			awk '
+				BEGIN { quote = sprintf("%c", 39) }
+				!quoted && /^config / { keep = ($2 == "global" || $2 == "config") }
+				{
+					if (keep) print
+					# UCI exports single-quoted values, possibly spanning lines.
+					for (i = 1; i <= length($0); i++) {
+						c = substr($0, i, 1)
+						if (!quoted && c == "\\") i++
+						else if (c == quote) quoted = !quoted
+					}
+				}
+			' "$workdir/source" >"$workdir/config" || exit 1
+		fi
+
+		if [ -s "$workdir/config" ]; then
+			# Keep the original file (including official socat sections) untouched.
+			if [ ! -e /etc/config/socat.luci-app-backup ]; then
+				cp -p /etc/config/socat /etc/config/socat.luci-app-backup || exit 1
+			fi
+		else
+			printf "config global 'global'\n\toption enable '0'\n" >"$workdir/config" || exit 1
+		fi
 	fi
 
 	chmod 600 "$workdir/config" || exit 1
-	mv "$workdir/config" /etc/config/luci_socat || exit 1
+	mv "$workdir/config" /etc/config/luci-socat || exit 1
 fi
+
+# Retire the old service name, including manually installed startup links.
+if [ -x /etc/init.d/luci_socat ]; then
+	/etc/init.d/luci_socat stop
+	/etc/init.d/luci_socat disable
+fi
+# The package manager may already have removed the old init script.
+ubus call service delete '{"name":"luci_socat"}' >/dev/null 2>&1 || true
+rm -f /etc/init.d/luci_socat /etc/rc.d/[SK][0-9][0-9]luci_socat
 
 # Remove files left behind by manually installed Lua versions.
 rm -f /usr/lib/lua/luci/controller/socat.lua \

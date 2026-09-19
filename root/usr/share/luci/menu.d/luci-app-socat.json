@@ -8,7 +8,7 @@
 		},
 		"depends": {
 			"acl": [ "luci-app-socat" ],
-			"uci": { "luci_socat": true }
+			"uci": { "luci-socat": true }
 		}
 	}
 }

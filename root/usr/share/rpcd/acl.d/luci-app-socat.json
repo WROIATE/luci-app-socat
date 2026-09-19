@@ -3,7 +3,7 @@
 		"description": "Grant access to Socat configuration and service status",
 		"read": {
 			"uci": [
-				"luci_socat"
+				"luci-socat"
 			],
 			"ubus": {
 				"service": [
@@ -16,7 +16,7 @@
 		},
 		"write": {
 			"uci": [
-				"luci_socat"
+				"luci-socat"
 			]
 		}
 	}

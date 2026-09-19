@@ -19,20 +19,25 @@ var callHostHints = rpc.declare({
 	expect: { '': {} }
 });
 
-function statusText(services, sectionId) {
-	if (services == null)
-		return _('Unable to query service status');
+function updateStatus(element, services, sectionId) {
+	var instances = (services && services['luci-socat'] || {}).instances || {};
+	var running = instances[sectionId] && instances[sectionId].running;
+	var label = services == null ? _('Unable to query service status')
+		: running ? _('Running') : _('Not running');
 
-	var instances = (services.luci_socat || {}).instances || {};
-	return instances[sectionId] && instances[sectionId].running
-		? _('Running') : _('Not running');
+	element.textContent = services == null ? '--' : running ? '✓' : 'X';
+	element.style.fontWeight = 'bold';
+	element.style.color = services == null ? '' : running ? 'green' : 'red';
+	element.setAttribute('title', label);
+	element.setAttribute('aria-label', label);
+	return element;
 }
 
 return view.extend({
 	load: function() {
 		return Promise.all([
-			uci.load('luci_socat'),
-			callServiceList('luci_socat').catch(function() { return null; }),
+			uci.load('luci-socat'),
+			callServiceList('luci-socat').catch(function() { return null; }),
 			L.resolveDefault(callHostHints(), {})
 		]);
 	},
@@ -42,7 +47,7 @@ return view.extend({
 		var services = data[1];
 		var hints = data[2];
 
-		m = new form.Map('luci_socat', _('Socat'),
+		m = new form.Map('luci-socat', _('Socat'),
 			_("Socat is a versatile networking tool named after 'Socket CAT', which can be regarded as an N-fold enhanced version of NetCat"));
 
 		s = m.section(form.NamedSection, 'global', 'global');
@@ -55,7 +60,7 @@ return view.extend({
 		s.addremove = true;
 		s.modaltitle = _('Socat Config');
 		s.filter = function(sectionId) {
-			return uci.get('luci_socat', sectionId, 'protocol') == 'port_forwards';
+			return uci.get('luci-socat', sectionId, 'protocol') == 'port_forwards';
 		};
 
 		o = s.option(form.Flag, 'enable', _('Enable'));
@@ -66,7 +71,7 @@ return view.extend({
 		o = s.option(form.DummyValue, '_status', _('Status'));
 		o.modalonly = false;
 		o.textvalue = function(sectionId) {
-			return E('span', { 'data-socat-status': sectionId }, statusText(services, sectionId));
+			return updateStatus(E('span', { 'data-socat-status': sectionId }), services, sectionId);
 		};
 
 		o = s.option(form.Value, 'remarks', _('Remarks'));
@@ -156,12 +161,12 @@ return view.extend({
 
 		return m.render().then(function(node) {
 			poll.add(function() {
-				return callServiceList('luci_socat').catch(function() {
+				return callServiceList('luci-socat').catch(function() {
 					return null;
 				}).then(function(result) {
 					services = result;
 					document.querySelectorAll('[data-socat-status]').forEach(function(element) {
-						element.textContent = statusText(services, element.getAttribute('data-socat-status'));
+						updateStatus(element, services, element.getAttribute('data-socat-status'));
 					});
 				});
 			}, 3);
